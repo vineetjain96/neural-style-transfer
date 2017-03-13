@@ -63,4 +63,4 @@ def relu_layer(layer_input):
 	return tf.nn.relu(layer_input)
 
 def pool_layer(layer_input):
-	return tf.nn.max_pool(layer_input, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1), padding='SAME')
+	return tf.nn.avg_pool(layer_input, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1), padding='SAME')
