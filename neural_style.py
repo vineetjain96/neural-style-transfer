@@ -5,6 +5,8 @@ from argparse import ArgumentParser
 import vgg19
 import losses
 
+CONTENT_WEIGHT = 5e0
+STYLE_WEIGHT = 1e4
 ITERATIONS = 1000
 LEARNING_RATE = 1e1
 OUTPUT = 'result.jpg'
@@ -25,6 +27,14 @@ def build_argparser():
 	parser.add_argument('--output',
 			dest='output', help='Output Image',
 			type=str, default=OUTPUT)
+	parser.add_argument('--content-weight',
+			dest='content_weight', help='Content Image Weight',
+			type=float, default=CONTENT_WEIGHT)
+	parser.add_argument('--style-weight',
+			dest='style_weight', help='Style Image Weight',
+			type=float, default=STYLE_WEIGHT)
+	parser.add_argument('--width',
+			dest='width', help='Width of Output Image', type=int)
 	parser.add_argument('--iterations',
 			dest='iterations', help='Number of Iterations (default: %(default)s)',
 			type=int, default=ITERATIONS)
@@ -38,8 +48,15 @@ def build_argparser():
 
 
 
-def stylize(model, content_image, style_image, init_image,
-			iterations, learning_rate):
+def stylize(model_file, init_image, content_image, style_image, content_weight,
+			style_weight, iterations, learning_rate):
+	model, mean = vgg19.build_net(model_file, content_image)
+
+	content_image = preprocess(content_image, mean)
+	style_image = preprocess(style_image, mean)
+	init_image = preprocess(init_image, mean)
+
+
 	with tf.Session() as sess:
 		L_content = losses.total_content_loss(sess, model, content_image, content_layers)
 		L_style = losses.total_style_loss(sess, model, style_image, style_layers)
@@ -61,6 +78,7 @@ def stylize(model, content_image, style_image, init_image,
 
 		output_image = sess.run(model['input'])
 
+	output_image = postprocess(output_image, mean)
 	return output_image
 
 def preprocess(image, mean):
@@ -82,24 +100,25 @@ def main():
 	content_image = scipy.misc.imread(args.content).astype(np.float32)
 	style_image = scipy.misc.imread(args.style).astype(np.float32)
 
-	model, mean = vgg19.build_net(args.model, content_image)
-
-	shape = content_image.shape
-	style_image = scipy.misc.imresize(style_image, shape)
-
-	content_image = preprocess(content_image, mean)
-	style_image = preprocess(style_image, mean)
+	width = args.width
+	if width is not None:
+		h = int(math.floor((float(content_image.shape[0])*width/float(content_image.shape[1]))))
+		w = width
+		content_image = scipy.misc.imresize(content_image, (h,w))
+	style_image = scipy.misc.imresize(style_image, content_image.shape)
 
 	init_image = content_image
 
-	output_image = stylize(model=model, 
+	output_image = stylize(model_file=args.model, 
+						init_image=init_image,
 						content_image=content_image,
 						style_image=style_image,
-						init_image=init_image,
+						content_weight = args.content_weight,
+						style_weight = args.style_weight,
 						iterations=args.iterations,
 						learning_rate=args.learning_rate)
 
-	output_image = postprocess(output_image, mean)
+	
 	scipy.misc.imsave(args.output, output_image)
 	return
 
