@@ -32,12 +32,15 @@ def total_content_loss(sess, model, content_image, content_layers):
 	return content_loss
 
 
-def total_style_loss(sess, model, style_image, style_layers):
-	sess.run(model['input'].assign(style_image))
-	style_loss = 0
-	for layer in style_layers:
-		A = sess.run(model[layer])
-		A = tf.convert_to_tensor(A)
-		G = model[layer]
-		style_loss += style_layer_loss(A, G)
-	return style_loss
+def total_style_loss(sess, model, style_images, style_blend_weights, style_layers):
+	total_style_loss = 0
+	for style, weight in zip(style_images, style_blend_weights):
+		sess.run(model['input'].assign(style))
+		style_loss = 0
+		for layer in style_layers:
+			A = sess.run(model[layer])
+			A = tf.convert_to_tensor(A)
+			G = model[layer]
+			style_loss += style_layer_loss(A, G)
+		total_style_loss += style_loss * weight
+	return total_style_loss
