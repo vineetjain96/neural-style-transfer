@@ -61,7 +61,7 @@ def stylize(model_file, init_image, content_image, style_image, content_weight,
 		L_content = losses.total_content_loss(sess, model, content_image, content_layers)
 		L_style = losses.total_style_loss(sess, model, style_image, style_layers)
 
-		L_total = L_content + L_style
+		L_total = content_weight*L_content + style_weight*L_style
 
 		optimizer = tf.train.AdamOptimizer(learning_rate)
 
@@ -73,7 +73,7 @@ def stylize(model_file, init_image, content_image, style_image, content_weight,
 		i = 0
 		while (i < iterations):
 			sess.run(train_op)
-			print 'Iteration '+str(i)+'/1000'
+			print 'Iteration '+str(i)+'/'+str(iterations)
 			i += 1
 
 		output_image = sess.run(model['input'])
