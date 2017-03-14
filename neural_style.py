@@ -11,6 +11,7 @@ ITERATIONS = 1000
 LEARNING_RATE = 1e1
 OUTPUT = 'result.jpg'
 MODEL_PATH = 'imagenet-vgg-verydeep-19.mat'
+POOLING = 'max'
 
 content_layers = ['relu5_2']
 style_layers = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
@@ -47,13 +48,16 @@ def build_argparser():
 	parser.add_argument('--model',
 			dest='model', help='File containing Model Parameters (default: %(default)s)',
 			type=str, default=MODEL_PATH)
+	parser.add_argument('--pooling', 
+			dest='pooling', help='Max or Average Pooling',
+			choices=['max', 'avg'], default=POOLING)
 	return parser
 
 
 
 def stylize(model_file, initial, content, styles, content_weight,
-			style_weight, style_blend_weights, iterations, learning_rate):
-	model, mean = vgg19.build_net(model_file, initial)
+			style_weight, style_blend_weights, iterations, learning_rate, pooling):
+	model, mean = vgg19.build_net(model_file, initial, pooling)
 
 	content_image = preprocess(content, mean)
 	style_images = [preprocess(style, mean) for style in styles]
@@ -76,7 +80,7 @@ def stylize(model_file, initial, content, styles, content_weight,
 		i = 0
 		while (i < iterations):
 			sess.run(train_op)
-			print 'Iteration '+str(i)+'/'+str(iterations)
+			print 'Iteration '+str(i+1)+'/'+str(iterations)
 			i += 1
 
 		output_image = sess.run(model['input'])
@@ -128,14 +132,15 @@ def main():
 	init_image = content_image
 
 	output_image = stylize(model_file=args.model, 
-						initial=init_image,
-						content=content_image,
-						styles=style_images,
-						content_weight=args.content_weight,
-						style_weight=args.style_weight,
-						style_blend_weights=style_blend_weights,
-						iterations=args.iterations,
-						learning_rate=args.learning_rate)
+					initial=init_image,
+					content=content_image,
+					styles=style_images,
+					content_weight=args.content_weight,
+					style_weight=args.style_weight,
+					style_blend_weights=style_blend_weights,
+					iterations=args.iterations,
+					learning_rate=args.learning_rate,
+					pooling=args.pooling)
 
 	
 	scipy.misc.imsave(args.output, output_image)

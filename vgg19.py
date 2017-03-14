@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import scipy.io
 
-def build_net(model_path, input_image):
+def build_net(model_path, input_image, pooling):
 
 
 	layers = (
@@ -47,7 +47,7 @@ def build_net(model_path, input_image):
 			current_layer = relu_layer(current_layer)
 
 		elif layer_type == 'pool':
-			current_layer = pool_layer(current_layer)
+			current_layer = pool_layer(current_layer, pooling)
 
 		model[layer_name] = current_layer
 
@@ -62,5 +62,8 @@ def conv_layer(layer_input, weights, bias):
 def relu_layer(layer_input):
 	return tf.nn.relu(layer_input)
 
-def pool_layer(layer_input):
-	return tf.nn.avg_pool(layer_input, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1), padding='SAME')
+def pool_layer(layer_input, pooling):
+	if pooling == 'avg':
+		return tf.nn.avg_pool(layer_input, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1), padding='SAME')
+	else:
+		return tf.nn.max_pool(layer_input, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1), padding='SAME')
